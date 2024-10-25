@@ -57,14 +57,9 @@ def parse_bin_file(file_path: str) -> tuple[FileHeader, list[MemoryFrame]]:
     return file_header, frames
 
 
-def apply_stop_point_shift(frames: list[MemoryFrame]) -> None:
-    for frame in frames:
-        frame.cells = (frame.cells[1024 - frame.header.stop_point:]
-                        + frame.cells[:1024 - frame.header.stop_point])
-
 
 if __name__ ==  '__main__':
-    file_path = r"C:\development\IterPoly_GUI\data_folder\no_lamp\side_a_fast_data.bin"
+    file_path = r"C:\development\IterPoly_GUI\data_folder\calibration_files\0_lvl_side_a_fast_data.bin"
     if os.path.exists(file_path):
         file_header, frames = parse_bin_file(file_path)
         print(f"Side: {file_header.side}, Mode: {file_header.mode}, Frame Count: {file_header.frame_count}")
