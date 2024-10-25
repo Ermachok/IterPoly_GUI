@@ -26,29 +26,29 @@ class FrameHeader:
 
 
 class MemoryFrame:
-    def __init__(self, header, points):
+    def __init__(self, header, cells):
         self.header = header
-        self.points = points
+        self.cells = cells
 
     @staticmethod
     def parse(data):
         header = FrameHeader.parse(data[:16])
-        points = []
+        cells = []
         offset = 16  # offset from header
         for i in range(1024):
-            point = struct.unpack('8H', data[offset:offset + 16])
-            points.append(point)
+            cell = struct.unpack('8H', data[offset:offset + 16])
+            cells.append(cell)
             offset += 16
-        return MemoryFrame(header, points)
+        return MemoryFrame(header, cells)
 
 
-def parse_bin_file(file_path: str) -> tuple[FileHeader, list]:
+def parse_bin_file(file_path: str) -> tuple[FileHeader, list[MemoryFrame]]:
     with open(file_path, 'rb') as f:
 
         file_header_data = f.read(256)
         file_header = FileHeader.parse(file_header_data)
 
-        frames = []
+        frames: list[MemoryFrame] = []
         for _ in range(file_header.frame_count):
             frame_data = f.read(16400)  # 16400 - header 16 bytes + frame 1024 * 16 = 16400, 16 - element = 8 * 2 bytes
             frame = MemoryFrame.parse(frame_data)
@@ -57,11 +57,20 @@ def parse_bin_file(file_path: str) -> tuple[FileHeader, list]:
     return file_header, frames
 
 
-file_path = r"C:\Users\NE\Desktop\newSOFT_adc\side_a_fast_data.bin"
-if os.path.exists(file_path):
-    file_header, frames = parse_bin_file(file_path)
-    print(f"Side: {file_header.side}, Mode: {file_header.mode}, Frame Count: {file_header.frame_count}")
-    print(f"First Frame Stop Point: {frames[0].header.stop_point}, Timestamp: {frames[0].header.timestamp}")
-else:
-    print("File not found!")
+def apply_stop_point_shift(frames: list[MemoryFrame]) -> None:
+    for frame in frames:
+        frame.cells = (frame.cells[1024 - frame.header.stop_point:]
+                        + frame.cells[:1024 - frame.header.stop_point])
+
+
+if __name__ ==  '__main__':
+    file_path = r"C:\development\IterPoly_GUI\data_folder\no_lamp\side_a_fast_data.bin"
+    if os.path.exists(file_path):
+        file_header, frames = parse_bin_file(file_path)
+        print(f"Side: {file_header.side}, Mode: {file_header.mode}, Frame Count: {file_header.frame_count}")
+        print(f"First Frame Stop Point: {frames[0].header.stop_point}, Timestamp: {frames[0].header.timestamp}")
+    else:
+        print("File not found!")
+
+    apply_stop_point_shift(frames)
 
