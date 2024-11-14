@@ -7,7 +7,7 @@ def get_signals_integrals(frames: list[MemoryFrame], channel_number: int) -> Non
     adc_counts = 1024
     adc_timestep = 0.2  # ns
     bit_depth = 2**14   # bit depth
-    adc_range = 1000 # 1 millivolt
+    adc_range = 1000 # 1 volt
 
     sig_borders = [575, 815, 815 - 575] # approx cells numbers and len
     all_integrals = []
