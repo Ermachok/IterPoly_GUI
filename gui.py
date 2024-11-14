@@ -3,8 +3,8 @@ from tkinter import filedialog, messagebox
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from ADCpoly_binParser.parser import parse_bin_file
-import statistics
 
+from calculation_scripts.calculations import calculate_amplitude, calculate_fwhm
 
 
 class App:
@@ -16,40 +16,33 @@ class App:
 
         self.file_path = ""
         self.frames = []
-
-        self.root.grid_rowconfigure(0, weight=0)
-        self.root.grid_rowconfigure(1, weight=0)
-        self.root.grid_rowconfigure(2, weight=0)
-        self.root.grid_rowconfigure(3, weight=0)
-        self.root.grid_rowconfigure(4, weight=0)
+        for row_num in range(5):
+            self.root.grid_rowconfigure(row_num, weight=0)
         self.root.grid_rowconfigure(5, weight=1)
 
-        self.root.grid_columnconfigure(0, weight=1)
-        self.root.grid_columnconfigure(1, weight=1)
-        self.root.grid_columnconfigure(2, weight=1)
-        self.root.grid_columnconfigure(3, weight=1)
-        self.root.grid_columnconfigure(4, weight=1)
+        for column_num in range(5):
+            self.root.grid_columnconfigure(column_num, weight=0)
         self.root.grid_columnconfigure(5, weight=12)
 
         self.select_file_btn = tk.Button(self.root, text="Select File", command=self.select_file, width=10)
         self.parse_file_btn = tk.Button(self.root, text="Parse File", command=self.parse_file, state=tk.DISABLED,
                                         width=10)
 
-        self.select_file_btn.grid(row=0, column=0, padx=10, pady=5, sticky="ew", columnspan=1)
-        self.parse_file_btn.grid(row=1, column=0, padx=10, pady=5, sticky="ew", columnspan=1)
+        self.select_file_btn.grid(row=0, column=0, padx=5, pady=5, sticky="ew", columnspan=1)
+        self.parse_file_btn.grid(row=1, column=0, padx=5, pady=5, sticky="ew", columnspan=1)
 
         self.plot_graph_btn = tk.Button(self.root, text="Plot Graph", command=self.plot_graph, state=tk.DISABLED,
                                         width=10)
-        self.plot_graph_btn.grid(row=0, column=1, padx=10, pady=10, sticky="ew", columnspan=1)
+        self.plot_graph_btn.grid(row=0, column=1, padx=5, pady=10, sticky="ew", columnspan=1)
 
         self.frame_label = tk.Label(self.root, text="Frame Number:")
-        self.frame_label.grid(row=0, column=2, padx=5, pady=5, sticky="ew")
+        self.frame_label.grid(row=0, column=2, padx=5, pady=5, sticky="e")
 
         self.frame_entry = tk.Entry(self.root, width=5)
         self.frame_entry.grid(row=0, column=3, padx=5, pady=5, sticky="ew")
 
         self.channel_label = tk.Label(self.root, text="Channel Number:")
-        self.channel_label.grid(row=1, column=2, padx=5, pady=5, sticky="ew")
+        self.channel_label.grid(row=1, column=2, padx=5, pady=5, sticky="e")
 
         self.channel_entry = tk.Entry(self.root, width=5)
         self.channel_entry.grid(row=1, column=3, padx=5, pady=5, sticky="ew")
@@ -60,6 +53,9 @@ class App:
 
         self.amplitude_label = tk.Label(self.root, text="Signal amplitudes: ", anchor="w")
         self.amplitude_label.grid(row=1, column=4, padx=5, pady=5, sticky="w")
+
+        self.fwhm_label = tk.Label(self.root, text="Signal FWHM: ", anchor="w")
+        self.fwhm_label.grid(row=0, column=5, padx=5, pady=5, sticky="w")
 
         self.fig, self.ax = plt.subplots(figsize=(6, 4))
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
@@ -125,17 +121,7 @@ class App:
         self.ax.set_xlabel('time, ns')
         self.canvas.draw()
 
-
-    @staticmethod
-    def calculate_amplitude(signal) -> float:
-        bit_depth = 2 ** 14  # bit depth
-        adc_range = 1000
-        mode = statistics.mode(signal)
-        min_val = min(signal)
-        amplitude = abs(mode - min_val)
-        return amplitude / bit_depth * adc_range
-
-    def plot_average_signal(self):
+    def plot_average_signal(self, adc_timestep: float = 0.2):
         ch_numbers = self.channel_entry.get()
 
         try:
@@ -146,6 +132,7 @@ class App:
 
         averaged_data = {}
         amplitudes = {}
+        fwhms = {}
 
         for ch_number in ch_numbers:
             if ch_number < 0 or ch_number >= len(self.frames[0].adc_channels):
@@ -162,15 +149,20 @@ class App:
 
             averaged_data[ch_number] = [sum_value / frame_count for sum_value in summed_data]
 
-            amplitude = self.calculate_amplitude(averaged_data[ch_number])
+            amplitude = calculate_amplitude(averaged_data[ch_number])
             amplitudes[ch_number] = amplitude
 
+            fwhms[ch_number] = calculate_fwhm(averaged_data[ch_number]) * adc_timestep
+
         amplitude_text = "; ".join([f"Ch {ch}: {amplitudes[ch]:.2f}" for ch in ch_numbers])
+        fwhm_text = "; ".join([f"Ch {ch}: {fwhms[ch]:.2f} ns" for ch in ch_numbers])
+
         self.amplitude_label.config(text=f"Signals amplitudes (mV): {amplitude_text}")
+        self.fwhm_label.config(text=f"Signal FWHM: {fwhm_text}")
 
         self.ax.clear()
 
-        times = [i * 0.2 for i in range(1024)]
+        times = [i * adc_timestep for i in range(1024)]
         for ch_number, data in averaged_data.items():
             self.ax.plot(times, data, label=f"Channel {ch_number} (avg)")
 
@@ -178,7 +170,7 @@ class App:
         self.ax.legend()
         self.ax.set_ylabel('adc counts, a.u.')
         self.ax.set_xlabel('time, ns')
-        self.ax.set_xlim([100, 180])
+        self.ax.set_xlim([90, 190])
         self.ax.grid()
         self.canvas.draw()
 
