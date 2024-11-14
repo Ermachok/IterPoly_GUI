@@ -1,1 +1,1 @@
-Rep for project to show signals from ITER-like polys and their properties. Averaging, FWHM calculations, plotting. Matplotlib, tkinter, numpy used.
+Rep for project showing signals from ITER-like polys and their properties. Averaging, FWHM calculations, plotting. Matplotlib, tkinter, numpy used. Almost all work made in a couple of hours with a lot of soul and a lot of hatred
