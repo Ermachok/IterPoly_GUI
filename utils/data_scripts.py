@@ -15,7 +15,7 @@ def get_single_measurement(frame: MemoryFrame, channel_num: int) -> tuple[list, 
 
     ch_data: list[int] = []
     for cell in range(adc_cells):
-        ch_data.append(frame.cells[cell][channel_num])
+        ch_data.append(frame.adc_channels[cell][channel_num])
 
 
     return [adc_timestep * count for count in range(adc_cells)], ch_data
@@ -41,7 +41,7 @@ def write_calibration_data_from_zero_lvl(input_file_path: str, output_file_path:
         for cell in range(adc_cells_number):
             one_cell_in_frames = []
             for frame in frames:
-                one_cell_in_frames.append(frame.cells[cell][ch])
+                one_cell_in_frames.append(frame.adc_channels[cell][ch])
             median_cell = median(one_cell_in_frames)
             channel_cells.append(median_cell)
         all_channels.append(channel_cells)
@@ -58,8 +58,8 @@ def write_calibration_data_from_zero_lvl(input_file_path: str, output_file_path:
 
 def apply_stop_point_shift(frames: list[MemoryFrame]) -> None:
     for frame in frames:
-        frame.cells = (frame.cells[1024 - frame.header.stop_point:]
-                        + frame.cells[:1024 - frame.header.stop_point])
+        frame.adc_channels = (frame.adc_channels[1024 - frame.header.stop_point:]
+                              + frame.adc_channels[:1024 - frame.header.stop_point])
 
 
 def apply_calibrations(frames: list[MemoryFrame], calibration_file_path: str) -> None:
@@ -70,7 +70,7 @@ def apply_calibrations(frames: list[MemoryFrame], calibration_file_path: str) ->
 
     for frame in frames:
         for cell in range(1024):
-            frame.cells[cell] = [frame.cells[cell][ch] - calibration_data[f'ch_{ch}'][cell] for ch in range(8)]
+            frame.adc_channels[cell] = [frame.adc_channels[cell][ch] - calibration_data[f'ch_{ch}'][cell] for ch in range(8)]
 
 
 if __name__ == '__main__':

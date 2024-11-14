@@ -14,6 +14,6 @@ def plot_several_signals(frames: list[MemoryFrame], channel_number: int) -> None
     time = [timestep * count for count in range(adc_counts)]
 
     for frame in frames:
-        plt.plot(time, [frame.cells[cell][channel_number] for cell in range(adc_counts)])
+        plt.plot(time[500:1000], frame.adc_channels[channel_number][500:1000])
 
     plt.show()
