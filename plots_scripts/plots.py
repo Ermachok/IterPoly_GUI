@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 
 from ADCpoly_binParser.parser import MemoryFrame
 
+
 def plot_single_signal(times: list, ch_data: list) -> None:
     plt.plot(times, ch_data)
     plt.show()
@@ -14,6 +15,6 @@ def plot_several_signals(frames: list[MemoryFrame], channel_number: int) -> None
     time = [timestep * count for count in range(adc_counts)]
 
     for frame in frames:
-        plt.plot(time[500:1000], frame.adc_channels[channel_number][500:1000])
+        plt.plot(time, frame.adc_channels[channel_number])
 
     plt.show()
